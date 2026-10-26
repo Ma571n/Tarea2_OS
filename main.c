@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
+#include "config/config.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 3 || argc > 4) {

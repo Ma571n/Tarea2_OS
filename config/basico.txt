@@ -1,0 +1,3 @@
+delay_min=50
+delay_max=300
+seed=42

@@ -11,6 +11,7 @@ void config_defaults(Config *cfg) {
     cfg->delay_min_ms = 50;
     cfg->delay_max_ms = 300;
     cfg->seed = (unsigned int)time(NULL);
+    cfg->prob_abandono = 0;
     cfg->pos_puma = POS_INICIAL_PUMA;
     for (int i = 0; i < NUM_PERROS; i++)
         cfg->pos_perros[i] = POS_INICIAL_PERROS[i];
@@ -20,6 +21,11 @@ int config_validar(const Config *cfg) {
     if (cfg->delay_min_ms < 0 || cfg->delay_min_ms > cfg->delay_max_ms) {
         fprintf(stderr, "config: delay_min (%d) debe estar entre 0 y delay_max (%d)\n",
                 cfg->delay_min_ms, cfg->delay_max_ms);
+        return -1;
+    }
+
+    if (cfg->prob_abandono < 0 || cfg->prob_abandono > 100) {
+        fprintf(stderr, "config: prob_abandono debe estar entre 0 y 100\n");
         return -1;
     }
 
@@ -102,6 +108,7 @@ int config_load(Config *cfg, const char *path) {
         if (strcmp(clave, "delay_min") == 0)      { mal = a_entero(valor, &v); cfg->delay_min_ms = (int)v; }
         else if (strcmp(clave, "delay_max") == 0) { mal = a_entero(valor, &v); cfg->delay_max_ms = (int)v; }
         else if (strcmp(clave, "seed") == 0)      { mal = a_entero(valor, &v); cfg->seed = (unsigned int)v; }
+        else if (strcmp(clave, "prob_abandono") == 0) { mal = a_entero(valor, &v); cfg->prob_abandono = (int)v; }
         else if (strcmp(clave, "puma") == 0)      { mal = a_entero(valor, &v); cfg->pos_puma = (int)v; }
         else if (strcmp(clave, "perros") == 0)    { mal = leer_perros(cfg, valor); }
         else {

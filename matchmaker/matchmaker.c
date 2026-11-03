@@ -230,6 +230,9 @@ void mm_ejecutar(Matchmaker *mm) {
         lanzadas++;
     }
 
+    if (hay_apagado(mm))
+        printf("[Servidor] Ctrl+C recibido: no se aceptan más jugadores y se cierran las mesas activas\n");
+
     for (int i = 0; i < lanzadas; i++)
         pthread_join(h_juez[i], NULL);
     for (int i = 0; i < jug_creados; i++)

@@ -22,8 +22,11 @@ prueba_matchmaker: pruebas/prueba_matchmaker.c config/config.c tablero/tablero.c
 	$(CC) $(CFLAGS) -o prueba_matchmaker pruebas/prueba_matchmaker.c config/config.c tablero/tablero.c partida/partida.c matchmaker/matchmaker.c
 	./prueba_matchmaker | tail -2
 
-.PHONY: pruebas clean
-pruebas: prueba_tablero prueba_config prueba_partida prueba_matchmaker
+.PHONY: pruebas prueba_sigint clean
+prueba_sigint:
+	bash pruebas/prueba_sigint.sh
+
+pruebas: prueba_tablero prueba_config prueba_partida prueba_matchmaker prueba_sigint
 
 clean:
 	rm -f torneo prueba_tablero prueba_config prueba_partida prueba_matchmaker

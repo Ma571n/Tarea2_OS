@@ -21,7 +21,7 @@ static void unir(int a, int b) {
 }
 
 /* Saltos en línea recta que salen o pasan por el triángulo.
- * Los de las laterales se calculan aparte. */
+ * Los de la grilla se calculan aparte. */
 static const int saltos_especiales[][3] = {
     /* desde, sobre, hacia */
     {0, 1, 3},  {3, 1, 0},     /* diagonal de la izquierda */

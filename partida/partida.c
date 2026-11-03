@@ -107,7 +107,7 @@ static void *hilo_perro(void *arg) {
 
 int partida_jugar(Partida *p) {
     Tablero *t = &p->tablero;
-    tablero_iniciar(t, POS_INICIAL_PUMA, POS_INICIAL_PERROS);
+    tablero_iniciar(t, p->cfg->pos_puma, p->cfg->pos_perros);
     pthread_cond_init(&p->fin, NULL);
 
     printf("[Mesa %d] Partida iniciada\n", p->id_mesa);

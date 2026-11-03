@@ -1,5 +1,6 @@
 # binarios y objetos
 torneo
 prueba_tablero
+prueba_partida
 *.o
 *.out

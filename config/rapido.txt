@@ -1,0 +1,4 @@
+# Para pruebas rápidas: retardos cortos
+delay_min=1
+delay_max=5
+seed=7

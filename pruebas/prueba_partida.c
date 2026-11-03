@@ -19,7 +19,11 @@ static void *pedir_apagado(void *arg) {
 }
 
 int main(void) {
-    Config cfg = { .delay_min_ms = 1, .delay_max_ms = 5, .seed = 42 };
+    Config cfg;
+    config_defaults(&cfg);
+    cfg.delay_min_ms = 1;
+    cfg.delay_max_ms = 5;
+    cfg.seed = 42;
 
     /* 1. varias partidas seguidas: siempre termina con un ganador coherente */
     for (int mesa = 1; mesa <= 5; mesa++) {
@@ -43,7 +47,9 @@ int main(void) {
     sem_destroy(&mesas);
 
     /* 3. apagado: con retardos largos, la partida se corta rápido */
-    Config lenta = { .delay_min_ms = 200, .delay_max_ms = 300, .seed = 1 };
+    Config lenta = cfg;
+    lenta.delay_min_ms = 200;
+    lenta.delay_max_ms = 300;
     Partida p3 = { .id_mesa = 7, .cfg = &lenta, .apagado = &apagar };
     pthread_t h;
     pthread_create(&h, NULL, pedir_apagado, NULL);

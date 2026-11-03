@@ -8,11 +8,18 @@ torneo: $(FUENTES)
 
 prueba_tablero: pruebas/prueba_tablero.c tablero/tablero.c
 	$(CC) $(CFLAGS) -o prueba_tablero pruebas/prueba_tablero.c tablero/tablero.c
-	./prueba_tablero
+	./prueba_tablero | tail -2
 
-prueba_partida: pruebas/prueba_partida.c tablero/tablero.c partida/partida.c
-	$(CC) $(CFLAGS) -o prueba_partida pruebas/prueba_partida.c tablero/tablero.c partida/partida.c
-	./prueba_partida | tail -3
+prueba_config: pruebas/prueba_config.c config/config.c tablero/tablero.c
+	$(CC) $(CFLAGS) -o prueba_config pruebas/prueba_config.c config/config.c tablero/tablero.c
+	./prueba_config 2>/dev/null | tail -2
+
+prueba_partida: pruebas/prueba_partida.c config/config.c tablero/tablero.c partida/partida.c
+	$(CC) $(CFLAGS) -o prueba_partida pruebas/prueba_partida.c config/config.c tablero/tablero.c partida/partida.c
+	./prueba_partida | tail -2
+
+.PHONY: pruebas clean
+pruebas: prueba_tablero prueba_config prueba_partida
 
 clean:
-	rm -f torneo prueba_tablero prueba_partida
+	rm -f torneo prueba_tablero prueba_config prueba_partida

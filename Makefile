@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c17 -pthread -g
 
-FUENTES = main.c config/config.c tablero/tablero.c partida/partida.c
+FUENTES = main.c config/config.c tablero/tablero.c partida/partida.c matchmaker/matchmaker.c
 
 torneo: $(FUENTES)
 	$(CC) $(CFLAGS) -o torneo $(FUENTES)
@@ -18,8 +18,12 @@ prueba_partida: pruebas/prueba_partida.c config/config.c tablero/tablero.c parti
 	$(CC) $(CFLAGS) -o prueba_partida pruebas/prueba_partida.c config/config.c tablero/tablero.c partida/partida.c
 	./prueba_partida | tail -2
 
+prueba_matchmaker: pruebas/prueba_matchmaker.c config/config.c tablero/tablero.c partida/partida.c matchmaker/matchmaker.c
+	$(CC) $(CFLAGS) -o prueba_matchmaker pruebas/prueba_matchmaker.c config/config.c tablero/tablero.c partida/partida.c matchmaker/matchmaker.c
+	./prueba_matchmaker | tail -2
+
 .PHONY: pruebas clean
-pruebas: prueba_tablero prueba_config prueba_partida
+pruebas: prueba_tablero prueba_config prueba_partida prueba_matchmaker
 
 clean:
-	rm -f torneo prueba_tablero prueba_config prueba_partida
+	rm -f torneo prueba_tablero prueba_config prueba_partida prueba_matchmaker

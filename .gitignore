@@ -3,5 +3,6 @@ torneo
 prueba_tablero
 prueba_config
 prueba_partida
+prueba_matchmaker
 *.o
 *.out

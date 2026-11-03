@@ -1,6 +1,10 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "config/config.h"
+#include "matchmaker/matchmaker.h"
+
+static volatile sig_atomic_t apagado = 0;
 
 int main(int argc, char *argv[]) {
     if (argc < 3 || argc > 4) {
@@ -21,7 +25,16 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    printf("N=%d M=%d delay=[%d,%d] seed=%u\n",
-           N, M, cfg.delay_min_ms, cfg.delay_max_ms, cfg.seed);
+    Matchmaker mm;
+    if (mm_iniciar(&mm, &cfg, N, M, &apagado) != 0) {
+        fprintf(stderr, "No se pudo iniciar el servidor\n");
+        return 1;
+    }
+
+    mm_ejecutar(&mm);
+
+    printf("\n[Servidor] Torneo terminado: %d partidas jugadas, máximo %d mesas a la vez\n",
+           mm.partidas_jugadas, mm.max_activas);
+    mm_destruir(&mm);
     return 0;
 }

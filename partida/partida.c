@@ -32,7 +32,7 @@ static void revisar_fin(Partida *p) {
     }
 }
 
-/* Threads de las fichas */
+/* ---------- Hilos de las fichas ---------- */
 
 static void *hilo_puma(void *arg) {
     Ficha *f = arg;
@@ -103,7 +103,7 @@ static void *hilo_perro(void *arg) {
     return NULL;
 }
 
-/* EL JUEZ EN CUESTION AQUI YO MANDO TIOOO*/
+/* ---------- Juez ---------- */
 
 int partida_jugar(Partida *p) {
     Tablero *t = &p->tablero;
@@ -130,7 +130,8 @@ int partida_jugar(Partida *p) {
         creados++;
     }
 
-    /* El juez espera a que termine todo y despierta cada 100 ms para revisar si el servidor pidió que se apague. */
+    /* El juez espera el fin de la partida. Despierta cada 100 ms para
+     * revisar si el servidor pidió apagar (SIGINT). */
     pthread_mutex_lock(&t->mutex);
     if (error) {
         t->terminado = true;

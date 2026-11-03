@@ -13,7 +13,7 @@ static void dormir_ms(int ms) {
     nanosleep(&ts, NULL);
 }
 
-/* Instante dentro de 'ms' milisegundos, para los timedwait */
+/* Instante (reloj real) dentro de 'ms' milisegundos, para los timedwait */
 static struct timespec en_ms(int ms) {
     struct timespec t;
     clock_gettime(CLOCK_REALTIME, &t);
@@ -27,7 +27,7 @@ static bool hay_apagado(const Matchmaker *mm) {
     return mm->apagado != NULL && *mm->apagado;
 }
 
-/* Inicio y muerte. */
+/* Inicio y muerte... */
 
 int mm_iniciar(Matchmaker *mm, const Config *cfg, int N, int M, volatile sig_atomic_t *apagado) {
     mm->cfg = cfg;
@@ -52,6 +52,7 @@ int mm_iniciar(Matchmaker *mm, const Config *cfg, int N, int M, volatile sig_ato
     mm->max_activas = 0;
     mm->partidas_jugadas = 0;
     mm->sin_pareja = 0;
+    mm->abandonos = 0;
 
     sem_init(&mm->mesas_libres, 0, (unsigned int)M);
     pthread_mutex_init(&mm->mutex, NULL);
@@ -102,7 +103,7 @@ static void *hilo_jugador(void *arg) {
     return NULL;
 }
 
-/* Jueces UNO POR MESA.*/
+/* LOS JUECES */
 
 typedef struct {
     Matchmaker *mm;
@@ -122,6 +123,8 @@ static void *hilo_juez(void *arg) {
     mm->activas--;
     if (resultado == GANA_PUMA || resultado == GANA_PERROS)
         mm->partidas_jugadas++;
+    if (d->partida.por_abandono)
+        mm->abandonos++;
     pthread_mutex_unlock(&mm->mutex);
 
     printf("[Servidor] Mesa %d liberada\n", d->mesa);
@@ -129,7 +132,7 @@ static void *hilo_juez(void *arg) {
     return NULL;
 }
 
-/* El SERVER. */
+/* EL SERVER */
 
 void mm_ejecutar(Matchmaker *mm) {
     int max_partidas = mm->N / 2;
@@ -206,6 +209,14 @@ void mm_ejecutar(Matchmaker *mm) {
         d->cfg = *mm->cfg;
         d->cfg.seed += (unsigned int)(lanzadas * 1000);
         d->partida = (Partida){ .id_mesa = mesa, .cfg = &d->cfg, .apagado = mm->apagado };
+
+        /* con probabilidad prob_abandono, un jugador falla en esta partida */
+        unsigned int s = d->cfg.seed;
+        if ((int)(rand_r(&s) % 100u) < mm->cfg->prob_abandono) {
+            int tras = 1 + (int)(rand_r(&s) % 5u);
+            if (rand_r(&s) % 2u == 0) d->partida.falla_puma_tras = tras;
+            else                      d->partida.falla_perros_tras = tras;
+        }
 
         if (pthread_create(&h_juez[lanzadas], NULL, hilo_juez, d) != 0) {
             fprintf(stderr, "No se pudo crear el juez de la mesa %d\n", mesa);

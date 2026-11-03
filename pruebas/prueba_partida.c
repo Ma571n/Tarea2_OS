@@ -59,6 +59,27 @@ int main(void) {
     VERIFICAR(g3 == SIN_GANADOR, "una partida interrumpida no tiene ganador");
     VERIFICAR(time(NULL) - inicio <= 2, "el apagado tardó demasiado");
 
+    /* 4. abandono: el jugador se cae con el mutex tomado y el oponente gana,
+     *    sin que nadie quede bloqueado (se repite para probar distintas carreras) */
+    for (int i = 0; i < 20; i++) {
+        Partida pa = { .id_mesa = 10, .cfg = &cfg, .falla_puma_tras = 3 };
+        time_t t0 = time(NULL);
+        int ga = partida_jugar(&pa);
+        VERIFICAR(ga == GANA_PERROS && pa.por_abandono, "si el Puma abandona, ganan los Perros");
+        VERIFICAR(time(NULL) - t0 <= 2, "el abandono del Puma dejó bloqueada la mesa");
+
+        Partida pb = { .id_mesa = 11, .cfg = &cfg, .falla_perros_tras = 4 };
+        t0 = time(NULL);
+        int gb = partida_jugar(&pb);
+        VERIFICAR(gb == GANA_PUMA && pb.por_abandono, "si los Perros abandonan, gana el Puma");
+        VERIFICAR(time(NULL) - t0 <= 2, "el abandono de los Perros dejó bloqueada la mesa");
+    }
+
+    /* 5. sin fallas no hay abandono */
+    Partida pc = { .id_mesa = 12, .cfg = &cfg };
+    partida_jugar(&pc);
+    VERIFICAR(!pc.por_abandono, "sin fallas no debe haber abandono");
+
     printf(fallas ? "\n%d prueba(s) fallaron\n" : "\nTodas las pruebas de partida pasaron\n", fallas);
     return fallas != 0;
 }

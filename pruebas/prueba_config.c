@@ -31,6 +31,8 @@ int main(void) {
     config_defaults(&c);
     VERIFICAR(config_validar(&c) == 0, "los valores por defecto deben ser válidos");
 
+    VERIFICAR(c.prob_abandono == 0, "por defecto nadie abandona");
+
     /* archivo completo */
     VERIFICAR(cargar_texto(&c,
         "# comentario\n"
@@ -50,7 +52,11 @@ int main(void) {
     VERIFICAR(cargar_texto(&c, "delay_min=5\r\ndelay_max=8\r\n") == 0, "CRLF debería aceptarse");
     VERIFICAR(c.delay_min_ms == 5 && c.delay_max_ms == 8, "CRLF mal leído");
 
+    VERIFICAR(cargar_texto(&c, "prob_abandono=30\n") == 0 && c.prob_abandono == 30, "prob_abandono mal leída");
+
     /* casos inválidos */
+    VERIFICAR(cargar_texto(&c, "prob_abandono=101\n") == -1, "prob_abandono > 100 debe fallar");
+    VERIFICAR(cargar_texto(&c, "prob_abandono=-5\n") == -1, "prob_abandono negativa debe fallar");
     VERIFICAR(cargar_texto(&c, "delay_min=500\ndelay_max=100\n") == -1, "min > max debe fallar");
     VERIFICAR(cargar_texto(&c, "delay_min=-1\n") == -1, "delay negativo debe fallar");
     VERIFICAR(cargar_texto(&c, "puma=99\n") == -1, "puma fuera del tablero debe fallar");

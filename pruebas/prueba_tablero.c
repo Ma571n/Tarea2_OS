@@ -30,7 +30,7 @@ int main(void) {
     VERIFICAR(destino_salto(0, 5) == 10 && destino_salto(1, 4) == 9, "saltos desde el triángulo");
     VERIFICAR(destino_salto(1, 2) == -1, "no se salta por el borde del triángulo");
 
-    /* 3. partida inicial: el puma en la cabezza no tiene capturas */
+    /* 3. partida inicial: el puma en el trono no tiene capturas */
     Tablero t;
     tablero_iniciar(&t, POS_INICIAL_PUMA, POS_INICIAL_PERROS);
     Movimiento m[MAX_VECINOS];

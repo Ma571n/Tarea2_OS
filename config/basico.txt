@@ -6,3 +6,6 @@ seed=42
 # Disposición inicial (números de nodo, ver tablero.h)
 puma=0
 perros=16,17,18,19,20,21,22,23,24,25,26,27
+
+# Porcentaje de partidas donde un jugador falla a mitad de juego
+prob_abandono=0

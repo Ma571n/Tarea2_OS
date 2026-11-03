@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "../config/config.h"
 
-/* Dos jugadores HAN LLEGADO PREPARAOS: el que llegó primero juega con el Puma. */
+/* Dos jugadores emparejados: el que llegó primero juega con el Puma. */
 typedef struct {
     int jugador_puma;
     int jugador_perros;
@@ -37,6 +37,7 @@ typedef struct {
     int max_activas;
     int partidas_jugadas;
     int sin_pareja;
+    int abandonos;
 } Matchmaker;
 
 int  mm_iniciar (Matchmaker *mm, const Config *cfg, int N, int M, volatile sig_atomic_t *apagado);

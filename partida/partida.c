@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -32,7 +33,18 @@ static void revisar_fin(Partida *p) {
     }
 }
 
-/* ---------- Hilos de las fichas ---------- */
+/* Simula que el jugador se cae: anota quién falló, avisa al juez y muere
+ * SIN soltar el mutex del tablero (el peor caso posible).
+ * Se llama con el mutex tomado y no vuelve. */
+static void caerse(Partida *p, int rol) {
+    p->tablero.abandono = rol;
+    printf("[Mesa %d] El jugador %s falló y dejó el mutex tomado\n",
+           p->id_mesa, rol == ABANDONA_PUMA ? "del Puma" : "de los Perros");
+    pthread_cond_signal(&p->fin);
+    pthread_exit(NULL);
+}
+
+/* Threads de las fichas */
 
 static void *hilo_puma(void *arg) {
     Ficha *f = arg;
@@ -42,9 +54,9 @@ static void *hilo_puma(void *arg) {
     for (;;) {
         dormir_aleatorio(p->cfg, &f->semilla);
 
-        pthread_mutex_lock(&t->mutex);
-        if (t->terminado) {
-            pthread_mutex_unlock(&t->mutex);
+        tablero_tomar(t);
+        if (t->terminado || t->abandono != ABANDONA_NADIE) {
+            tablero_soltar(t);
             break;
         }
 
@@ -69,8 +81,12 @@ static void *hilo_puma(void *arg) {
                 printf("[Mesa %d] Puma %d -> %d\n", p->id_mesa, desde, m.hacia);
             }
             revisar_fin(p);
+
+            p->mov_puma++;
+            if (!t->terminado && p->falla_puma_tras > 0 && p->mov_puma >= p->falla_puma_tras)
+                caerse(p, ABANDONA_PUMA);
         }
-        pthread_mutex_unlock(&t->mutex);
+        tablero_soltar(t);
     }
     return NULL;
 }
@@ -83,9 +99,9 @@ static void *hilo_perro(void *arg) {
     for (;;) {
         dormir_aleatorio(p->cfg, &f->semilla);
 
-        pthread_mutex_lock(&t->mutex);
-        if (t->terminado || t->pos_perro[f->id] < 0) {   /* fin o capturado */
-            pthread_mutex_unlock(&t->mutex);
+        tablero_tomar(t);
+        if (t->terminado || t->abandono != ABANDONA_NADIE || t->pos_perro[f->id] < 0) {
+            tablero_soltar(t);   /* fin, abandono o perro capturado */
             break;
         }
 
@@ -97,18 +113,25 @@ static void *hilo_perro(void *arg) {
             mover_perro(t, f->id, hacia);
             printf("[Mesa %d] D%d %d -> %d\n", p->id_mesa, f->id, desde, hacia);
             revisar_fin(p);
+
+            p->mov_perros++;
+            if (!t->terminado && p->falla_perros_tras > 0 && p->mov_perros >= p->falla_perros_tras)
+                caerse(p, ABANDONA_PERROS);
         }
-        pthread_mutex_unlock(&t->mutex);
+        tablero_soltar(t);
     }
     return NULL;
 }
 
-/* ---------- Juez ---------- */
+/* JUEZ YO MANDO */
 
 int partida_jugar(Partida *p) {
     Tablero *t = &p->tablero;
     tablero_iniciar(t, p->cfg->pos_puma, p->cfg->pos_perros);
     pthread_cond_init(&p->fin, NULL);
+    p->por_abandono = false;
+    p->mov_puma = 0;
+    p->mov_perros = 0;
 
     printf("[Mesa %d] Partida iniciada\n", p->id_mesa);
     tablero_imprimir(t, p->id_mesa);
@@ -130,13 +153,18 @@ int partida_jugar(Partida *p) {
         creados++;
     }
 
-    /* El juez espera el fin de la partida. Despierta cada 100 ms para
-     * revisar si el servidor pidió apagar (SIGINT). */
-    pthread_mutex_lock(&t->mutex);
-    if (error) {
+    /* El juez espera el fin de la partida, un abandono o un apagado, despierta cada 100 ms por si acaso se perdió algún aviso. */
+    tablero_tomar(t);
+    if (error)
         t->terminado = true;
-    }
     while (!t->terminado) {
+        if (t->abandono != ABANDONA_NADIE) {
+            /* un jugador falló: gana el oponente por abandono */
+            t->terminado = true;
+            t->ganador = (t->abandono == ABANDONA_PUMA) ? GANA_PERROS : GANA_PUMA;
+            p->por_abandono = true;
+            break;
+        }
         if (p->apagado != NULL && *p->apagado) {
             t->terminado = true;
             break;
@@ -148,15 +176,20 @@ int partida_jugar(Partida *p) {
             limite.tv_sec++;
             limite.tv_nsec -= 1000000000L;
         }
-        pthread_cond_timedwait(&p->fin, &t->mutex, &limite);
+        /* si el que murió tenía el mutex, aquí volvemos con EOWNERDEAD */
+        if (pthread_cond_timedwait(&p->fin, &t->mutex, &limite) == EOWNERDEAD)
+            pthread_mutex_consistent(&t->mutex);
     }
-    pthread_mutex_unlock(&t->mutex);
+    tablero_soltar(t);
 
     for (int i = 0; i < creados; i++)
         pthread_join(hilos[i], NULL);
 
     int resultado = error ? -1 : t->ganador;
-    if (resultado == GANA_PUMA)
+    if (p->por_abandono)
+        printf("[Mesa %d] Gana %s por abandono del oponente\n", p->id_mesa,
+               resultado == GANA_PUMA ? "el Puma" : "los Perros");
+    else if (resultado == GANA_PUMA)
         printf("[Mesa %d] Gana el Puma con %d capturas\n", p->id_mesa, t->capturas);
     else if (resultado == GANA_PERROS)
         printf("[Mesa %d] Ganan los Perros: el Puma quedó acorralado\n", p->id_mesa);

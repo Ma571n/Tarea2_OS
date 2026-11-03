@@ -57,7 +57,16 @@ int main(void) {
     VERIFICAR(mm.partidas_jugadas == 1, "con N=2 se juega 1 partida");
     mm_destruir(&mm);
 
-    /* 5. apagado en medio del torneo: termina rápido y sin mesas colgadas */
+    /* 5. con prob_abandono=100 todas las partidas terminan por abandono */
+    Config falla = rapida;
+    falla.prob_abandono = 100;
+    torneo(&mm, &falla, 6, 2, NULL);
+    VERIFICAR(mm.partidas_jugadas == 3, "con abandonos igual se completan las 3 partidas");
+    VERIFICAR(mm.abandonos == 3, "las 3 partidas debían terminar por abandono");
+    VERIFICAR(mm.activas == 0, "tras los abandonos no deben quedar mesas activas");
+    mm_destruir(&mm);
+
+    /* 6. apagado en medio del torneo: termina rápido y sin mesas colgadas */
     Config lenta = rapida;
     lenta.delay_min_ms = 200;
     lenta.delay_max_ms = 300;

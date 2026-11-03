@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
 
     mm_ejecutar(&mm);
 
-    printf("\n[Servidor] Torneo terminado: %d partidas jugadas, máximo %d mesas a la vez\n",
-           mm.partidas_jugadas, mm.max_activas);
+    printf("\n[Servidor] Torneo terminado: %d partidas jugadas (%d por abandono), máximo %d mesas a la vez\n",
+           mm.partidas_jugadas, mm.abandonos, mm.max_activas);
     mm_destruir(&mm);
     return 0;
 }

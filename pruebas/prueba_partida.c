@@ -1,4 +1,3 @@
-/* Prueba de partidas completas, con retardos cortos para que sea rápido. */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +24,6 @@ int main(void) {
     cfg.delay_max_ms = 5;
     cfg.seed = 42;
 
-    /* 1. varias partidas seguidas: siempre termina con un ganador coherente */
     for (int mesa = 1; mesa <= 5; mesa++) {
         Partida p = { .id_mesa = mesa, .cfg = &cfg };
         int g = partida_jugar(&p);
@@ -36,7 +34,6 @@ int main(void) {
             VERIFICAR(p.tablero.capturas >= CAPTURAS_PARA_GANAR, "puma ganó sin 6 capturas");
     }
 
-    /* 2. el semáforo de mesas se libera al terminar */
     sem_t mesas;
     sem_init(&mesas, 0, 0);
     Partida p2 = { .id_mesa = 6, .cfg = &cfg, .mesas_libres = &mesas };
@@ -46,7 +43,6 @@ int main(void) {
     VERIFICAR(valor == 1, "la mesa debería liberarse con sem_post");
     sem_destroy(&mesas);
 
-    /* 3. apagado: con retardos largos, la partida se corta rápido */
     Config lenta = cfg;
     lenta.delay_min_ms = 200;
     lenta.delay_max_ms = 300;
@@ -59,8 +55,6 @@ int main(void) {
     VERIFICAR(g3 == SIN_GANADOR, "una partida interrumpida no tiene ganador");
     VERIFICAR(time(NULL) - inicio <= 2, "el apagado tardó demasiado");
 
-    /* 4. abandono: el jugador se cae con el mutex tomado y el oponente gana,
-     *    sin que nadie quede bloqueado (se repite para probar distintas carreras) */
     for (int i = 0; i < 20; i++) {
         Partida pa = { .id_mesa = 10, .cfg = &cfg, .falla_puma_tras = 3 };
         time_t t0 = time(NULL);
@@ -75,7 +69,6 @@ int main(void) {
         VERIFICAR(time(NULL) - t0 <= 2, "el abandono de los Perros dejó bloqueada la mesa");
     }
 
-    /* 5. sin fallas no hay abandono */
     Partida pc = { .id_mesa = 12, .cfg = &cfg };
     partida_jugar(&pc);
     VERIFICAR(!pc.por_abandono, "sin fallas no debe haber abandono");

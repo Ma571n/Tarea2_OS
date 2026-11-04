@@ -6,14 +6,14 @@
 #include "matchmaker.h"
 #include "../partida/partida.h"
 
-/* Utilidades */
+// Utilidades
 
 static void dormir_ms(int ms) {
     struct timespec ts = { ms / 1000, (long)(ms % 1000) * 1000000L };
     nanosleep(&ts, NULL);
 }
 
-/* Instante (reloj real) dentro de 'ms' milisegundos, para los timedwait */
+// Instante (reloj real) dentro de 'ms' milisegundos, para los timedwait 
 static struct timespec en_ms(int ms) {
     struct timespec t;
     clock_gettime(CLOCK_REALTIME, &t);
@@ -27,7 +27,7 @@ static bool hay_apagado(const Matchmaker *mm) {
     return mm->apagado != NULL && *mm->apagado;
 }
 
-/* Inicio y muerte... */
+// Inicio y muerte
 
 int mm_iniciar(Matchmaker *mm, const Config *cfg, int N, int M, volatile sig_atomic_t *apagado) {
     mm->cfg = cfg;
@@ -68,7 +68,7 @@ void mm_destruir(Matchmaker *mm) {
     free(mm->mesa_ocupada);
 }
 
-/* Jugadores */
+// Jugadores
 
 typedef struct {
     Matchmaker *mm;
@@ -76,7 +76,7 @@ typedef struct {
     unsigned int semilla;
 } Jugador;
 
-/* El jugador se anota. Si ya había uno esperando, quedan emparejados. */
+// El jugador se anota. Si ya había uno esperando, quedan emparejados.
 static void llegar(Matchmaker *mm, int id) {
     pthread_mutex_lock(&mm->mutex);
     mm->llegados++;
@@ -96,19 +96,19 @@ static void llegar(Matchmaker *mm, int id) {
 
 static void *hilo_jugador(void *arg) {
     Jugador *j = arg;
-    /* cada jugador llega en un momento aleatorio */
+    // cada jugador llega en un momento aleatorio
     dormir_ms((int)(rand_r(&j->semilla) % (unsigned int)(j->mm->cfg->delay_max_ms + 1)));
     if (!hay_apagado(j->mm))
         llegar(j->mm, j->id);
     return NULL;
 }
 
-/* LOS JUECES */
+// LOS JUECES
 
 typedef struct {
     Matchmaker *mm;
     Partida partida;
-    Config cfg;        /* copia propia, para darle una semilla distinta a cada partida */
+    Config cfg;        
     int mesa;
 } DatosMesa;
 
@@ -132,7 +132,7 @@ static void *hilo_juez(void *arg) {
     return NULL;
 }
 
-/* EL SERVER */
+// EL SERVER 
 
 void mm_ejecutar(Matchmaker *mm) {
     int max_partidas = mm->N / 2;
@@ -146,7 +146,7 @@ void mm_ejecutar(Matchmaker *mm) {
         goto limpiar;
     }
 
-    /* llegan los N jugadores, cada uno en su propio hilo */
+    // llegan los N jugadores, cada uno en su propio hilo
     int jug_creados = 0;
     for (int i = 0; i < mm->N; i++) {
         jugadores[i] = (Jugador){ mm, i + 1, mm->cfg->seed + (unsigned int)i };
@@ -159,7 +159,7 @@ void mm_ejecutar(Matchmaker *mm) {
 
     int lanzadas = 0;
     for (;;) {
-        /* espera pasiva a que haya una pareja lista */
+        // espera pasiva a que haya una pareja lista
         pthread_mutex_lock(&mm->mutex);
         while (mm->cola_n == 0 && mm->llegados < jug_creados && !hay_apagado(mm)) {
             struct timespec limite = en_ms(100);
@@ -177,7 +177,7 @@ void mm_ejecutar(Matchmaker *mm) {
         printf("[Servidor] Pareja lista: jugador %d (Puma) vs jugador %d (Perros)\n",
                par.jugador_puma, par.jugador_perros);
 
-        /* si ya hay M mesas ocupadas, espera aquí sin gastar CPU */
+        // si ya hay M mesas ocupadas, espera aquí sin gastar CPU
         int obtuvo_mesa = 0;
         while (!obtuvo_mesa && !hay_apagado(mm)) {
             struct timespec limite = en_ms(100);
@@ -189,7 +189,7 @@ void mm_ejecutar(Matchmaker *mm) {
         if (!obtuvo_mesa)
             break;
 
-        /* elige la primera mesa libre (el semáforo asegura que existe una) */
+        // elige la primera mesa libre (el semáforo asegura que existe una) 
         pthread_mutex_lock(&mm->mutex);
         int mesa = 0;
         for (int k = 0; k < mm->M; k++)
@@ -210,7 +210,7 @@ void mm_ejecutar(Matchmaker *mm) {
         d->cfg.seed += (unsigned int)(lanzadas * 1000);
         d->partida = (Partida){ .id_mesa = mesa, .cfg = &d->cfg, .apagado = mm->apagado };
 
-        /* con probabilidad prob_abandono, un jugador falla en esta partida */
+        // con probabilidad prob_abandono, un jugador falla en esta partida 
         unsigned int s = d->cfg.seed;
         if ((int)(rand_r(&s) % 100u) < mm->cfg->prob_abandono) {
             int tras = 1 + (int)(rand_r(&s) % 5u);

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "../config/config.h"
 
-/* Dos jugadores emparejados: el que llegó primero juega con el Puma. */
+// Dos jugadores emparejados: el que llegó primero juega con el Puma 
 typedef struct {
     int jugador_puma;
     int jugador_perros;
@@ -15,24 +15,24 @@ typedef struct {
 
 typedef struct {
     const Config *cfg;
-    int N;                              /* jugadores totales          */
-    int M;                              /* máximo de mesas simultáneas */
-    volatile sig_atomic_t *apagado;     /* se pone en 1 con SIGINT     */
+    int N;                              
+    int M;                              
+    volatile sig_atomic_t *apagado;     
 
-    sem_t mesas_libres;                 /* cuenta las mesas disponibles */
+    sem_t mesas_libres;                 
 
-    pthread_mutex_t mutex;              /* protege todo lo de abajo    */
-    pthread_cond_t  hay_pareja;         /* avisa al servidor           */
+    pthread_mutex_t mutex;              
+    pthread_cond_t  hay_pareja;         
 
-    Pareja *cola;                       /* parejas listas, en orden    */
+    Pareja *cola;                       
     int capacidad_cola;
     int cola_ini;
     int cola_n;
-    int esperando;                      /* jugador sin pareja, o -1    */
-    int llegados;                       /* jugadores que ya llegaron   */
-    bool *mesa_ocupada;                 /* una por mesa                */
+    int esperando;                      
+    int llegados;                       
+    bool *mesa_ocupada;                 
 
-    /* estadísticas */
+    // Estadísticas
     int activas;
     int max_activas;
     int partidas_jugadas;
@@ -41,7 +41,7 @@ typedef struct {
 } Matchmaker;
 
 int  mm_iniciar (Matchmaker *mm, const Config *cfg, int N, int M, volatile sig_atomic_t *apagado);
-void mm_ejecutar(Matchmaker *mm);   /* corre el torneo completo */
+void mm_ejecutar(Matchmaker *mm);   
 void mm_destruir(Matchmaker *mm);
 
 #endif

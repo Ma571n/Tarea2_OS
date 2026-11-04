@@ -1,5 +1,4 @@
 #!/bin/bash
-# prueba del ctrl+c a mitad del torneo, con AddressSanitizer para ver fugas
 
 cd "$(dirname "$0")/.." || exit 1
 FUENTES="main.c config/config.c tablero/tablero.c partida/partida.c matchmaker/matchmaker.c"
@@ -10,7 +9,6 @@ printf 'delay_min=200\ndelay_max=300\nseed=1\n' > /tmp/config_lenta.txt
 fallas=0
 fallar() { echo "FALLA: $1"; fallas=$((fallas + 1)); }
 
-# ctrl+c cuando aún llegan jugadores, con mesas jugando y con parejas esperando
 for espera in 0.1 1.5 3; do
     shm_antes=$(ls /dev/shm 2>/dev/null | wc -l)
     /tmp/torneo_asan 12 2 /tmp/config_lenta.txt > /tmp/salida_sigint.txt 2>&1 &

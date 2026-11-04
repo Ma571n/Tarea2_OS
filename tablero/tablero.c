@@ -10,11 +10,11 @@ const int POS_INICIAL_PERROS[NUM_PERROS] = {
     NODO(4,0), NODO(4,1), NODO(4,2), NODO(4,3), NODO(4,4),
 };
 
-/* Vecinos y saltos */
+// Vecinos y saltos 
 
 static int  vecinos[NUM_NODOS][MAX_VECINOS];
 static int  num_vecinos[NUM_NODOS];
-static int  salto[NUM_NODOS][NUM_NODOS];   /* salto[a][b] = c, o -1 */
+static int  salto[NUM_NODOS][NUM_NODOS];   
 static pthread_once_t una_vez = PTHREAD_ONCE_INIT;
 
 static void unir(int a, int b) {
@@ -22,36 +22,33 @@ static void unir(int a, int b) {
     vecinos[b][num_vecinos[b]++] = a;
 }
 
-/* Saltos en línea recta que salen o pasan por el triángulo.
- * Laterales se calculan aparte. */
 static const int saltos_especiales[][3] = {
-    /* desde, sobre, hacia */
-    {0, 1, 3},  {3, 1, 0},     /* diagonal izquierda */
-    {0, 2, 7},  {7, 2, 0},     /* diagonal derecha   */
-    {0, 5, 10}, {10, 5, 0},    /* vertical central   */
-    {1, 4, 9},  {9, 4, 1},     /* vertical izquierda */
-    {2, 6, 11}, {11, 6, 2},    /* vertical derecha   */
+    {0, 1, 3},  {3, 1, 0},     
+    {0, 2, 7},  {7, 2, 0},     
+    {0, 5, 10}, {10, 5, 0},    
+    {1, 4, 9},  {9, 4, 1},     
+    {2, 6, 11}, {11, 6, 2},    
 };
 
 static void construir_tablas(void) {
-    /* Laterales vecinos horizontales y verticales */
+    // Laterales vecinos horizontales y verticales 
     for (int f = 0; f < 5; f++)
         for (int c = 0; c < 5; c++) {
             if (c < 4) unir(NODO(f, c), NODO(f, c + 1));
             if (f < 4) unir(NODO(f, c), NODO(f + 1, c));
         }
 
-    /* trono y triángulo */
+    // trono y triángulo
     unir(0, 1);  unir(0, 2);  unir(1, 2);
-    unir(0, 5);                    /* trono con el centro de la fila 0 */
-    unir(1, 3);  unir(1, 4);       /* nodo izquierdo */
-    unir(2, 6);  unir(2, 7);       /* nodo derecho   */
+    unir(0, 5);                    
+    unir(1, 3);  unir(1, 4);       
+    unir(2, 6);  unir(2, 7);       
 
     for (int a = 0; a < NUM_NODOS; a++)
         for (int b = 0; b < NUM_NODOS; b++)
             salto[a][b] = -1;
 
-    /* saltos dentro de la grilla: se sigue la misma dirección */
+    // saltos dentro de la grilla: se sigue la misma dirección 
     for (int a = 3; a < NUM_NODOS; a++)
         for (int i = 0; i < num_vecinos[a]; i++) {
             int b = vecinos[a][i];
@@ -88,7 +85,6 @@ int destino_salto(int desde, int sobre) {
     return salto[desde][sobre];
 }
 
-/* ---------- Inicio y destrucción ---------- */
 
 void tablero_iniciar(Tablero *t, int pos_puma, const int pos_perros[NUM_PERROS]) {
     preparar_tablas();
@@ -112,8 +108,6 @@ void tablero_iniciar(Tablero *t, int pos_puma, const int pos_perros[NUM_PERROS])
     t->ganador      = SIN_GANADOR;
     t->abandono     = ABANDONA_NADIE;
 
-    /* mutex "robusto": si un hilo muere con el mutex tomado, el siguiente
-     * que lo pida recibe EOWNERDEAD en vez de quedarse bloqueado para siempre */
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
@@ -134,7 +128,7 @@ void tablero_destruir(Tablero *t) {
     pthread_mutex_destroy(&t->mutex);
 }
 
-/* Tablero a pantallita */
+// Tablero a pantallita 
 
 static pthread_mutex_t mutex_impresion = PTHREAD_MUTEX_INITIALIZER;
 
@@ -162,7 +156,7 @@ void tablero_imprimir(const Tablero *t, int id_mesa) {
     pthread_mutex_unlock(&mutex_impresion);
 }
 
-/* Movimientos */
+// Movimientos
 
 int movimientos_puma(const Tablero *t, Movimiento salida[]) {
     int n = 0;
@@ -192,7 +186,7 @@ int movimientos_perro(const Tablero *t, int id, int salida[]) {
     return n;
 }
 
-/* Cambios en el tablero */
+// Cambios en el tablero
 
 void mover_puma(Tablero *t, int hacia) {
     t->casilla[t->pos_puma] = VACIA;

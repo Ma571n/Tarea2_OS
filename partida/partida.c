@@ -5,7 +5,6 @@
 #include <time.h>
 #include "partida.h"
 
-/* Datos que recibe cada hilo ficha. id = -1 es el puma, 0..11 son los perros. */
 typedef struct {
     Partida *p;
     int id;
@@ -22,7 +21,6 @@ static void dormir_aleatorio(const Config *cfg, unsigned int *semilla) {
     dormir_ms(cfg->delay_min_ms + (int)(rand_r(semilla) % (unsigned int)rango));
 }
 
-/* Se llama con el mutex del tablero tomado. */
 static void revisar_fin(Partida *p) {
     Tablero *t = &p->tablero;
     int g = revisar_ganador(t);
@@ -33,9 +31,6 @@ static void revisar_fin(Partida *p) {
     }
 }
 
-/* Simula que el jugador se cae: anota quién falló, avisa al juez y muere
- * SIN soltar el mutex del tablero (el peor caso posible).
- * Se llama con el mutex tomado y no vuelve. */
 static void caerse(Partida *p, int rol) {
     p->tablero.abandono = rol;
     printf("[Mesa %d] El jugador %s falló y dejó el mutex tomado\n",
@@ -43,8 +38,6 @@ static void caerse(Partida *p, int rol) {
     pthread_cond_signal(&p->fin);
     pthread_exit(NULL);
 }
-
-/* Threads de las fichas */
 
 static void *hilo_puma(void *arg) {
     Ficha *f = arg;
@@ -63,7 +56,6 @@ static void *hilo_puma(void *arg) {
         Movimiento opciones[MAX_VECINOS];
         int n = movimientos_puma(t, opciones);
         if (n > 0) {
-            /* si puede capturar, lo prefiere; si no, elige al azar */
             int elegido = (int)(rand_r(&f->semilla) % (unsigned int)n);
             for (int i = 0; i < n; i++)
                 if (opciones[i].sobre >= 0) { elegido = i; break; }
@@ -123,8 +115,6 @@ static void *hilo_perro(void *arg) {
     return NULL;
 }
 
-/* JUEZ YO MANDO */
-
 int partida_jugar(Partida *p) {
     Tablero *t = &p->tablero;
     tablero_iniciar(t, p->cfg->pos_puma, p->cfg->pos_perros);
@@ -143,7 +133,7 @@ int partida_jugar(Partida *p) {
 
     for (int i = 0; i <= NUM_PERROS; i++) {
         fichas[i].p = p;
-        fichas[i].id = i - 1;    /* la posición 0 es el puma */
+        fichas[i].id = i - 1;    
         fichas[i].semilla = p->cfg->seed + (unsigned int)(p->id_mesa * 100 + i);
         void *(*rutina)(void *) = (i == 0) ? hilo_puma : hilo_perro;
         if (pthread_create(&hilos[i], NULL, rutina, &fichas[i]) != 0) {
@@ -153,13 +143,11 @@ int partida_jugar(Partida *p) {
         creados++;
     }
 
-    /* El juez espera el fin de la partida, un abandono o un apagado, despierta cada 100 ms por si acaso se perdió algún aviso. */
     tablero_tomar(t);
     if (error)
         t->terminado = true;
     while (!t->terminado) {
         if (t->abandono != ABANDONA_NADIE) {
-            /* un jugador falló: gana el oponente por abandono */
             t->terminado = true;
             t->ganador = (t->abandono == ABANDONA_PUMA) ? GANA_PERROS : GANA_PUMA;
             p->por_abandono = true;
@@ -176,7 +164,6 @@ int partida_jugar(Partida *p) {
             limite.tv_sec++;
             limite.tv_nsec -= 1000000000L;
         }
-        /* si el que murió tenía el mutex, aquí volvemos con EOWNERDEAD */
         if (pthread_cond_timedwait(&p->fin, &t->mutex, &limite) == EOWNERDEAD)
             pthread_mutex_consistent(&t->mutex);
     }

@@ -7,7 +7,6 @@
 
 static volatile sig_atomic_t apagado = 0;
 
-/* el handler solo levanta la bandera, lo demás lo hacen los hilos */
 static void manejar_sigint(int sig) {
     (void)sig;
     apagado = 1;
@@ -32,7 +31,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* con un segundo ctrl+c se cierra de inmediato */
+    // con un segundo ctrl+c se cierra de inmediato
     struct sigaction sa = { 0 };
     sa.sa_handler = manejar_sigint;
     sigemptyset(&sa.sa_mask);
